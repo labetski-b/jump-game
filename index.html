@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прыжки между колоннами</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="stableColumnInfo">
+                <div id="stableHeight">100.0</div>
+                <div id="percentChange">+0.0%</div>
+            </div>
+            <div id="instructions">
+                Кликни на колонну для прыжка
+            </div>
+        </div>
+    </div>
+
+    <script src="js/volatility.js"></script>
+    <script src="js/columns.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
