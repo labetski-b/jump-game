@@ -27,10 +27,15 @@ class MobileGame extends Game {
         
         console.log('📱 Мобильная версия инициализирована');
         
-        // Запускаем диагностику подключения через 3 секунды
+        // Принудительно переинициализируем Binance API для мобильной версии
+        setTimeout(() => {
+            this.forceMobileBinanceInit();
+        }, 1000);
+        
+        // Запускаем диагностику подключения через 5 секунд
         setTimeout(() => {
             this.diagnosticsBinanceConnection();
-        }, 3000);
+        }, 5000);
     }
     
     setupCanvas() {
@@ -457,6 +462,29 @@ class MobileGame extends Game {
         }
     }
     
+    // Принудительная инициализация Binance для мобильной версии
+    async forceMobileBinanceInit() {
+        console.log('📱 Принудительная инициализация Binance API для мобильной версии...');
+        
+        if (!this.columnManager) {
+            console.error('❌ ColumnManager не найден');
+            return;
+        }
+        
+        // Если API еще не инициализирован, инициализируем
+        if (!this.columnManager.binanceAPI) {
+            console.log('🔧 Binance API не найден, инициализируем...');
+            await this.columnManager.initializeBinanceAPI();
+        } else if (!this.columnManager.binanceAPI.isConnected) {
+            console.log('🔧 Binance API найден, но не подключен, переподключаемся...');
+            try {
+                await this.columnManager.binanceAPI.reconnect();
+            } catch (error) {
+                console.error('❌ Ошибка переподключения:', error);
+            }
+        }
+    }
+
     // Диагностика подключения к Binance
     diagnosticsBinanceConnection() {
         console.log('🔍 === ДИАГНОСТИКА BINANCE ПОДКЛЮЧЕНИЯ ===');
