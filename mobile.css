@@ -1,0 +1,315 @@
+/* Мобильные стили для Crypto Jump Trading */
+
+* {
+    box-sizing: border-box;
+}
+
+body.mobile {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.mobile-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    background: #000;
+}
+
+/* Верхняя панель */
+.mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 1px solid #333;
+    min-height: 70px;
+    backdrop-filter: blur(5px);
+}
+
+.wallet-section, .leverage-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wallet-label {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.wallet-value {
+    color: #4A90E2;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.pnl-section {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pnl-display {
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+.pnl-display.positive {
+    color: #00FF41;
+}
+
+.pnl-display.negative {
+    color: #FF4444;
+}
+
+.leverage-btn {
+    background: #FF4444;
+    border: 2px solid #FF6B6B;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.leverage-btn:active {
+    transform: scale(0.95);
+    background: #FF6B6B;
+}
+
+/* Статус подключения */
+.connection-status {
+    text-align: center;
+    padding: 5px;
+    font-size: 12px;
+}
+
+.status-indicator {
+    color: #888;
+}
+
+.status-indicator.connected {
+    color: #00FF41;
+}
+
+/* Игровая область */
+.game-area {
+    flex: 1;
+    position: relative;
+    max-height: 50vh;
+    background: #000;
+}
+
+#gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+}
+
+/* Нижняя панель с кнопками */
+.mobile-controls {
+    background: rgba(0, 0, 0, 0.95);
+    padding: 15px;
+    border-top: 1px solid #333;
+    backdrop-filter: blur(10px);
+}
+
+.crypto-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.crypto-btn {
+    flex: 1;
+    padding: 12px 8px;
+    background: #2C3E50;
+    border: 2px solid #4A5568;
+    color: white;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.crypto-btn:active {
+    transform: scale(0.95);
+}
+
+.crypto-btn.active {
+    background: #FF4444;
+    border-color: #FF6B6B;
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.4);
+}
+
+.crypto-btn.usdt-btn {
+    background: #4A90E2;
+    border-color: #5BA3F5;
+}
+
+.crypto-btn.usdt-btn.active {
+    background: #5BA3F5;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.4);
+}
+
+.crypto-name {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.crypto-info {
+    font-size: 11px;
+    color: #CCC;
+    margin-bottom: 4px;
+}
+
+.mini-chart {
+    width: 40px;
+    height: 20px;
+    border-radius: 2px;
+}
+
+/* Модальное окно позиции */
+.position-modal {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.95);
+    border-top: 1px solid #333;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 50vh;
+    overflow-y: auto;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.position-modal.visible {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #333;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #FFF;
+    font-size: 16px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-btn:active {
+    color: #FFF;
+}
+
+.modal-content {
+    padding: 20px;
+    color: #FFF;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* Адаптация для очень маленьких экранов */
+@media (max-width: 320px) {
+    .crypto-buttons {
+        gap: 4px;
+    }
+    
+    .crypto-btn {
+        padding: 10px 6px;
+        min-height: 70px;
+    }
+    
+    .crypto-name {
+        font-size: 12px;
+    }
+    
+    .crypto-info {
+        font-size: 10px;
+    }
+    
+    .mini-chart {
+        width: 30px;
+        height: 15px;
+    }
+}
+
+/* Адаптация для высоких экранов */
+@media (min-height: 800px) {
+    .game-area {
+        max-height: 60vh;
+    }
+    
+    .mobile-header {
+        min-height: 80px;
+    }
+    
+    .crypto-btn {
+        min-height: 90px;
+        padding: 15px 10px;
+    }
+}
+
+/* Ландшафтная ориентация */
+@media (orientation: landscape) and (max-height: 500px) {
+    .mobile-header {
+        min-height: 50px;
+        padding: 8px 15px;
+    }
+    
+    .game-area {
+        max-height: 40vh;
+    }
+    
+    .crypto-btn {
+        min-height: 60px;
+        padding: 8px 6px;
+    }
+    
+    .pnl-display {
+        font-size: 22px;
+    }
+}

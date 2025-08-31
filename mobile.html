@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crypto Jump Trading - Mobile</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mobile.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- Верхняя панель с основной информацией -->
+        <div class="mobile-header">
+            <div class="wallet-section">
+                <div class="wallet-label">Баланс</div>
+                <div id="mobileWallet" class="wallet-value">$100.0</div>
+            </div>
+            
+            <div class="pnl-section">
+                <div id="mobilePnL" class="pnl-display">$0.00</div>
+            </div>
+            
+            <div class="leverage-section">
+                <button id="mobileLeverage" class="leverage-btn">x1000</button>
+            </div>
+        </div>
+
+        <!-- Статус подключения -->
+        <div class="connection-status">
+            <span id="mobileConnectionStatus" class="status-indicator">🔴 Подключение...</span>
+        </div>
+
+        <!-- Игровое поле (уменьшенное) -->
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <!-- Нижняя панель с кнопками криптовалют -->
+        <div class="mobile-controls">
+            <div class="crypto-buttons">
+                <button class="crypto-btn" data-crypto="0" data-name="BTC">
+                    <div class="crypto-name">BTC</div>
+                    <div class="crypto-info">Купить</div>
+                    <canvas class="mini-chart" width="40" height="20"></canvas>
+                </button>
+                
+                <button class="crypto-btn" data-crypto="1" data-name="ETH">
+                    <div class="crypto-name">ETH</div>
+                    <div class="crypto-info">Купить</div>
+                    <canvas class="mini-chart" width="40" height="20"></canvas>
+                </button>
+                
+                <button class="crypto-btn" data-crypto="2" data-name="ADA">
+                    <div class="crypto-name">ADA</div>
+                    <div class="crypto-info">Купить</div>
+                    <canvas class="mini-chart" width="40" height="20"></canvas>
+                </button>
+                
+                <button class="crypto-btn" data-crypto="3" data-name="DOT">
+                    <div class="crypto-name">DOT</div>
+                    <div class="crypto-info">Купить</div>
+                    <canvas class="mini-chart" width="40" height="20"></canvas>
+                </button>
+                
+                <button class="crypto-btn usdt-btn" data-crypto="usdt">
+                    <div class="crypto-name">USDT</div>
+                    <div class="crypto-info">$100.0</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Модальное окно с деталями позиции -->
+        <div id="positionModal" class="position-modal">
+            <div class="modal-header">
+                <h3>Активная позиция</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-content">
+                <div id="positionDetails">
+                    <!-- Детали позиции будут добавлены через JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Скрипты игры -->
+    <script src="js/binance-api.js"></script>
+    <script src="js/columns.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/mobile-game.js"></script>
+
+    <script>
+        // Инициализация мобильной игры
+        document.addEventListener('DOMContentLoaded', () => {
+            window.mobileGame = new MobileGame();
+            console.log('🚀 Мобильная версия игры "Crypto Jump Trading" загружена!');
+        });
+    </script>
+</body>
+</html>

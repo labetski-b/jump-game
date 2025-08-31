@@ -27,6 +27,19 @@
         </div>
     </div>
 
+    <!-- Детекция мобильного устройства и перенаправление -->
+    <script>
+        function isMobileDevice() {
+            return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                   window.innerWidth < 768;
+        }
+        
+        // Перенаправляем мобильные устройства на мобильную версию
+        if (isMobileDevice()) {
+            window.location.href = 'mobile.html';
+        }
+    </script>
+    
     <script src="js/binance-api.js"></script>
     <script src="js/columns.js"></script>
     <script src="js/player.js"></script>
