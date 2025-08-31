@@ -36,6 +36,12 @@ class MobileGame extends Game {
         setTimeout(() => {
             this.diagnosticsBinanceConnection();
         }, 5000);
+        
+        // Убеждаемся что игровое состояние 'waiting'
+        setTimeout(() => {
+            console.log('📱 Принудительная установка gameState в waiting, текущее:', this.gameState);
+            this.gameState = 'waiting';
+        }, 2000);
     }
     
     setupCanvas() {
@@ -65,7 +71,12 @@ class MobileGame extends Game {
     
     setupMobileControls() {
         // Touch-события для кнопок криптовалют
-        document.querySelectorAll('.crypto-btn').forEach((btn, index) => {
+        const cryptoButtons = document.querySelectorAll('.crypto-btn');
+        console.log('📱 Найдено кнопок:', cryptoButtons.length);
+        
+        cryptoButtons.forEach((btn, index) => {
+            console.log('📱 Настройка кнопки:', btn.dataset.crypto);
+            
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 this.handleCryptoButtonTap(btn, index);
@@ -124,9 +135,15 @@ class MobileGame extends Game {
     }
     
     handleCryptoButtonTap(button, index) {
-        if (this.gameState !== 'waiting') return;
+        console.log('📱 Тап по кнопке:', button.dataset.crypto, 'gameState:', this.gameState);
+        
+        if (this.gameState !== 'waiting') {
+            console.warn('📱 Прыжок заблокирован, gameState:', this.gameState);
+            return;
+        }
         
         const cryptoType = button.dataset.crypto;
+        console.log('📱 Выполняем прыжок на:', cryptoType);
         
         if (cryptoType === 'usdt') {
             // USDT кнопка
