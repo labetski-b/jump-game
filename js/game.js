@@ -13,11 +13,15 @@ class Game {
         this.lastFrameTime = Date.now();
         this.isRunning = false;
         
+        // Состояние UI
+        this.isHoveringLeverageIndicator = false;
+        
         // Статистика
         this.stats = {
             totalJumps: 0,
             maxHeight: 100,
-            startTime: Date.now()
+            startTime: Date.now(),
+            startingWallet: 100 // Начальный кошелек для расчета процентов
         };
         
         this.init();
@@ -34,24 +38,39 @@ class Game {
         this.uiManager.updateStableColumnInfo(100, 0);
         this.uiManager.showWaitingState('stable');
         
+        // Инициализируем отображение кнопки плеча с дефолтным значением x1000
+        this.uiManager.updateLeverageDisplay(this.columnManager.getLeverage());
+        
+        // Подключение статуса Binance
+        this.setupBinanceStatus();
+        
         // Запуск игрового цикла
         this.start();
     }
     
     setupCanvas() {
-        // Упрощенная настройка canvas без DPR пока
-        this.canvas.width = 800;
-        this.canvas.height = 600;
+        // Полноэкранный режим
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
         
-        // Сглаживание
-        this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
+        // Отключаем сглаживание для четких пикселей
+        this.ctx.imageSmoothingEnabled = false;
+        
+        // Обновляем позиции колонн после изменения размера canvas
+        if (this.columnManager) {
+            this.columnManager.updateColumnPositions();
+        }
     }
     
     setupEventListeners() {
         // Клики по canvas
         this.canvas.addEventListener('click', (e) => {
             this.handleClick(e);
+        });
+        
+        // Наведение мыши для hover эффектов
+        this.canvas.addEventListener('mousemove', (e) => {
+            this.handleMouseMove(e);
         });
         
         // Адаптация под изменение размера окна
@@ -74,6 +93,12 @@ class Game {
         
         const rect = this.canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Проверяем, не кликнули ли мы в области UI элементов
+        if (this.isClickInUIArea(x, y)) {
+            return; // Игнорируем клики в области UI
+        }
         
         // Определяем на какую колонну кликнули
         const targetInfo = this.columnManager.getColumnAt(x);
@@ -90,6 +115,15 @@ class Game {
             
             this.executeJump(targetInfo.type, targetInfo.index);
         }
+    }
+    
+    handleMouseMove(event) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Меняем курсор для игрового поля
+        this.canvas.style.cursor = 'crosshair';
     }
     
     executeJump(targetColumnType, targetIndex = 0) {
@@ -111,13 +145,13 @@ class Game {
         if (jumpSuccess) {
             this.stats.totalJumps++;
             
-                    // Сохраняем информацию о цели и источнике для finishJump
-        this.jumpTarget = { 
-            type: targetColumnType, 
-            index: targetIndex,
-            fromType: this.player.getCurrentColumn(),
-            fromIndex: this.player.getCurrentIndex()
-        };
+            // Сохраняем информацию о цели и источнике для finishJump
+            this.jumpTarget = { 
+                type: targetColumnType, 
+                index: targetIndex,
+                fromType: currentColumnType,
+                fromIndex: this.player.getCurrentIndex()
+            };
             
             // Проверяем завершение прыжка каждые 100мс
             this.checkJumpCompletion();
@@ -150,32 +184,40 @@ class Game {
         const fromColumnType = this.jumpTarget.fromType;
         const fromColumnIndex = this.jumpTarget.fromIndex;
         
-        // СНАЧАЛА обрабатываем результат прыжка (пока currentVolatileIndex еще правильный)
+        // Обрабатываем результат прыжка ПЕРЕД тем как onPlayerLanded изменит состояние
         const jumpResult = this.columnManager.processJump(
             fromColumnType,
             targetType,
             targetIndex
         );
         
-        // ЗАТЕМ уведомляем ColumnManager о приземлении игрока (это обновит состояние колонн)
+        // Теперь обновляем состояние игрока после обработки
         this.columnManager.onPlayerLanded(targetType, targetIndex);
         
-        // Обновляем UI если есть изменения (только для прыжков на стабильную)
+        // Обновляем UI кошелька при любых результатах прыжка (включая промежуточные)
         if (jumpResult) {
-            // Показываем специальную обратную связь о росте
-            this.uiManager.showGrowthFeedback(
-                jumpResult.oldHeight,
-                jumpResult.newHeight,
-                jumpResult.percentChange
-            );
+            const currentWallet = this.columnManager.getWalletValue();
+            const walletChange = this.stats.startingWallet ? 
+                ((currentWallet - this.stats.startingWallet) / this.stats.startingWallet) * 100 : 0;
             
-            this.uiManager.updateStableColumnInfo(
-                jumpResult.newHeight,
-                jumpResult.percentChange
-            );
+            this.uiManager.updateStableColumnInfo(currentWallet, walletChange);
             
-            // Проверяем достижения
-            this.checkMilestones(jumpResult.newHeight);
+            // Показываем обратную связь только для финальных транзакций (не промежуточных)
+            if (!jumpResult.isIntermediate) {
+                // Рассчитываем правильный P/L относительно исходного кошелька
+                const initialWallet = this.stats.startingWallet;
+                const profitLoss = currentWallet - initialWallet;
+                const profitLossPercent = initialWallet > 0 ? (profitLoss / initialWallet) * 100 : 0;
+                
+                this.uiManager.showGrowthFeedback(
+                    jumpResult.oldHeight,
+                    jumpResult.newHeight,
+                    profitLossPercent
+                );
+                
+                // Проверяем достижения
+                this.checkMilestones(jumpResult.newHeight);
+            }
             
             // Обновляем статистику
             if (jumpResult.newHeight > this.stats.maxHeight) {
@@ -207,6 +249,17 @@ class Game {
         this.columnManager.update(deltaTime);
         this.player.update(deltaTime, this.columnManager);
         
+        // Обновляем UI с информацией о системе сравнения
+        const comparisonInfo = this.columnManager.getComparisonSystemInfo();
+        if (comparisonInfo && this.gameState === 'waiting') {
+            // Добавляем метод для получения текущей цены
+            this.uiManager.getCurrentPrice = (symbol) => {
+                const prices = this.columnManager.binanceAPI?.getGamePrices();
+                return prices?.[symbol]?.price || null;
+            };
+            this.uiManager.updateComparisonDisplay(comparisonInfo);
+        }
+        
         // Дополнительная логика в зависимости от состояния
         switch (this.gameState) {
             case 'waiting':
@@ -223,7 +276,7 @@ class Game {
     
     draw() {
         // Очищаем canvas
-        this.ctx.fillStyle = '#1A1A1A';
+        this.ctx.fillStyle = '#000000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Рисуем игровые объекты
@@ -232,21 +285,12 @@ class Game {
         
         // Дополнительные визуальные эффекты
         this.drawBackground();
-        this.drawScaleIndicator();
         this.drawDebugInfo();
     }
     
     drawBackground() {
-        // Тонкие вертикальные линии для атмосферы
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
-        
-        for (let x = 0; x < this.canvas.width; x += 50) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
-        }
+        // Убираем сетку по просьбе пользователя
+        // Оставляем чистый черный фон
     }
     
     drawScaleIndicator() {
@@ -282,6 +326,16 @@ class Game {
         }
     }
     
+    
+    isClickInUIArea(x, y) {
+        // Область правого верхнего угла для UI элементов
+        if (x >= this.canvas.width - 150 && y <= 120) {
+            return true;
+        }
+        
+        return false;
+    }
+    
     drawDebugInfo() {
         // Отображаем FPS и другую отладочную информацию в development режиме
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -289,10 +343,11 @@ class Game {
             
             this.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
             this.ctx.font = '12px Arial';
-            this.ctx.fillText(`FPS: ${fps}`, 10, this.canvas.height - 60);
-            this.ctx.fillText(`Jumps: ${this.stats.totalJumps}`, 10, this.canvas.height - 45);
-            this.ctx.fillText(`Max: ${this.stats.maxHeight.toFixed(1)}`, 10, this.canvas.height - 30);
-            this.ctx.fillText(`State: ${this.gameState}`, 10, this.canvas.height - 15);
+            this.ctx.fillText(`FPS: ${fps}`, 10, this.canvas.height - 75);
+            this.ctx.fillText(`Jumps: ${this.stats.totalJumps}`, 10, this.canvas.height - 60);
+            this.ctx.fillText(`Max: ${this.stats.maxHeight.toFixed(1)}`, 10, this.canvas.height - 45);
+            this.ctx.fillText(`State: ${this.gameState}`, 10, this.canvas.height - 30);
+            this.ctx.fillText(`Leverage: x${this.columnManager.getLeverage()}`, 10, this.canvas.height - 15);
         }
     }
     
@@ -348,7 +403,8 @@ class Game {
         this.stats = {
             totalJumps: 0,
             maxHeight: 100,
-            startTime: Date.now()
+            startTime: Date.now(),
+            startingWallet: 100
         };
         
         this.uiManager.updateStableColumnInfo(100, 0);
@@ -363,14 +419,36 @@ class Game {
     getStats() {
         return {
             ...this.stats,
-            currentHeight: this.columnManager.stableColumn.height,
-            volatileHeight: this.columnManager.volatileColumn.height,
+            currentHeight: this.columnManager.stableColumn?.height || 100,
+            volatileHeight: this.columnManager.volatileColumns?.[0]?.height || 0,
             gameTime: Date.now() - this.stats.startTime
         };
     }
     
     setVolatilityLevel(level) {
-        this.columnManager.volatilityEngine.impulseFactor = level;
+        if (this.columnManager.volatilityEngine) {
+            this.columnManager.volatilityEngine.impulseFactor = level;
+        }
+    }
+    
+    // Методы для работы со статусом Binance
+    setupBinanceStatus() {
+        // Проверяем статус каждые 2 секунды
+        setInterval(() => {
+            const status = this.columnManager.getStatus();
+            this.uiManager.updateConnectionStatus(status.connected);
+        }, 2000);
+        
+        // Устанавливаем начальный статус
+        setTimeout(() => {
+            const status = this.columnManager.getStatus();
+            this.uiManager.updateConnectionStatus(status.connected);
+        }, 1000);
+    }
+    
+    // Статус API
+    getBinanceStatus() {
+        return this.columnManager.getStatus();
     }
 }
 

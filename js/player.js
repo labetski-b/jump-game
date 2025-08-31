@@ -5,8 +5,10 @@ class Player {
         this.radius = 10;
         this.currentColumn = 'stable';
         this.currentIndex = -1; // Для стабильной колонны используем -1
-        this.position = { x: 120, y: 100 }; // Обновляем начальную позицию под новую стабильную колонну
-        this.targetPosition = { x: 120, y: 100 };
+        // Позиция игрока на первой колонне (USDT) - фиксированное позиционирование
+        const startX = canvas.width * 0.15; // 15% - та же позиция что и USDT колонна
+        this.position = { x: startX, y: 100 };
+        this.targetPosition = { x: startX, y: 100 };
         
         // Состояния анимации
         this.isJumping = false;
@@ -30,7 +32,7 @@ class Player {
             this.position.x = this.targetPosition.x;
             this.position.y = this.targetPosition.y;
         } else {
-            this.updateJumpAnimation(deltaTime);
+            this.updateJumpAnimation(deltaTime, columnManager);
         }
         
         // Обновляем визуальные эффекты
@@ -58,17 +60,23 @@ class Player {
         return true;
     }
     
-    updateJumpAnimation(deltaTime) {
+    updateJumpAnimation(deltaTime, columnManager) {
         const elapsed = Date.now() - this.jumpStartTime;
         const progress = Math.min(elapsed / this.jumpDuration, 1);
         
         if (progress >= 1) {
+            // Прыжок завершен - приземляемся
             this.isJumping = false;
             this.jumpPath = null;
+            
             // Обновляем текущую позицию игрока
-
+            const oldColumn = this.currentColumn;
+            const oldIndex = this.currentIndex;
+            
             this.currentColumn = this.targetColumnType;
             this.currentIndex = this.targetIndex;
+            
+            // Состояние игрока обновляется в Game.finishJump()
         } else {
             this.position = this.jumpPath.getPosition(progress);
         }
@@ -92,32 +100,59 @@ class Player {
     }
     
     drawPlayerBody() {
-        // Bounce эффект
-        const bounceOffset = Math.sin(this.bouncePhase) * 2;
+        // Минимальный bounce эффект
+        const bounceOffset = Math.sin(this.bouncePhase) * 1;
         const drawY = this.position.y + bounceOffset;
         
-        // Тень
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-        this.ctx.beginPath();
-        this.ctx.ellipse(this.position.x, this.position.y + 15, this.radius * 0.8, this.radius * 0.3, 0, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Определяем эмоцию игрока
+        const emotion = this.getPlayerEmotion();
         
-        // Основное тело
-        this.ctx.fillStyle = '#FFFFFF';
-        this.ctx.strokeStyle = '#E0E0E0';
-        this.ctx.lineWidth = 2;
+        // Рисуем смайлик
+        this.ctx.save();
+        this.ctx.font = 'bold 16px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillStyle = emotion.color;
+        this.ctx.fillText(emotion.emoji, this.position.x, drawY);
+        this.ctx.restore();
+    }
+    
+    getPlayerEmotion() {
+        // Получаем информацию о прибыли/убытке от игры
+        if (window.game && window.game.columnManager) {
+            const comparisonInfo = window.game.columnManager.getComparisonSystemInfo();
+            
+            if (comparisonInfo) {
+                // Активная позиция - показываем эмоцию на основе P/L
+                const profitLoss = comparisonInfo.profitLoss;
+                
+                if (profitLoss > 5) {
+                    return { emoji: '😄', color: '#7ED321' }; // Очень доволен - muted green
+                } else if (profitLoss > 1) {
+                    return { emoji: '😊', color: '#5CB85C' }; // Доволен - softer green
+                } else if (profitLoss > -1) {
+                    return { emoji: '😐', color: '#95A5A6' }; // Нейтрален - muted gray
+                } else if (profitLoss > -5) {
+                    return { emoji: '😕', color: '#D9534F' }; // Расстроен - muted red
+                } else {
+                    return { emoji: '😭', color: '#C0392B' }; // Очень расстроен - darker muted red
+                }
+            } else {
+                // На USDT - нейтральная эмоция
+                const stableHeight = window.game.columnManager.stableColumn?.height || 100;
+                
+                if (stableHeight > 105) {
+                    return { emoji: '😊', color: '#5CB85C' }; // Доволен ростом - muted green
+                } else if (stableHeight < 95) {
+                    return { emoji: '😕', color: '#D9534F' }; // Расстроен убытком - muted red
+                } else {
+                    return { emoji: '😐', color: '#95A5A6' }; // Нейтрален - muted gray
+                }
+            }
+        }
         
-        this.ctx.beginPath();
-        this.ctx.arc(this.position.x, drawY, this.radius, 0, Math.PI * 2);
-        this.ctx.fill();
-        this.ctx.stroke();
-        
-        // Глаза (простые точки)
-        this.ctx.fillStyle = '#333';
-        this.ctx.beginPath();
-        this.ctx.arc(this.position.x - 3, drawY - 2, 1.5, 0, Math.PI * 2);
-        this.ctx.arc(this.position.x + 3, drawY - 2, 1.5, 0, Math.PI * 2);
-        this.ctx.fill();
+        // Дефолтная эмоция
+        return { emoji: '😐', color: '#95A5A6' };
     }
     
     drawJumpEffects() {
@@ -126,7 +161,7 @@ class Player {
             const progress = (Date.now() - this.jumpStartTime) / this.jumpDuration;
             
             // Пульсация во время прыжка
-            this.ctx.strokeStyle = `rgba(0, 255, 65, ${1 - progress})`;
+            this.ctx.strokeStyle = `rgba(126, 211, 33, ${1 - progress})`;
             this.ctx.lineWidth = 3;
             this.ctx.beginPath();
             this.ctx.arc(this.position.x, this.position.y, this.radius + 5, 0, Math.PI * 2);
@@ -178,7 +213,7 @@ class Player {
             const alpha = particle.life / particle.maxLife;
             this.ctx.save();
             this.ctx.globalAlpha = alpha;
-            this.ctx.fillStyle = '#00FF41';
+            this.ctx.fillStyle = '#7ED321';
             this.ctx.beginPath();
             this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
             this.ctx.fill();

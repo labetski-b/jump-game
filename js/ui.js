@@ -4,6 +4,13 @@ class UIManager {
         this.percentChangeElement = document.getElementById('percentChange');
         this.instructionsElement = document.getElementById('instructions');
         
+        // Элемент статуса подключения
+        this.connectionStatus = document.getElementById('connectionStatus');
+        
+        // Элементы управления плечом
+        this.leverageButton = document.getElementById('leverageButton');
+        this.setupLeverageControl();
+        
         // Состояние UI
         this.lastStableHeight = 100.0;
         this.animationQueue = [];
@@ -57,8 +64,10 @@ class UIManager {
     }
     
     showGrowthFeedback(oldHeight, newHeight, percentChange) {
-        const heightDiff = newHeight - oldHeight;
-        const heightDiffText = (heightDiff >= 0 ? '+' : '') + heightDiff.toFixed(1);
+        // Рассчитываем правильный P/L относительно исходного депозита (100 USDT)
+        const initialDeposit = 100; // Исходный депозит
+        const profitLoss = newHeight - initialDeposit;
+        const profitLossText = (profitLoss >= 0 ? '+' : '') + profitLoss.toFixed(1);
         
         // Создаем всплывающий элемент с информацией о росте
         const feedbackElement = document.createElement('div');
@@ -66,7 +75,7 @@ class UIManager {
         feedbackElement.style.top = '120px';
         feedbackElement.style.left = '50%';
         feedbackElement.style.transform = 'translateX(-50%)';
-        feedbackElement.style.background = percentChange >= 0 ? 'rgba(76, 175, 80, 0.9)' : 'rgba(244, 67, 54, 0.9)';
+        feedbackElement.style.background = percentChange >= 0 ? 'rgba(126, 211, 33, 0.9)' : 'rgba(217, 83, 79, 0.9)';
         feedbackElement.style.color = 'white';
         feedbackElement.style.padding = '12px 20px';
         feedbackElement.style.borderRadius = '8px';
@@ -83,7 +92,7 @@ class UIManager {
                 ${newHeight.toFixed(1)} USDT
             </div>
             <div style="font-size: 14px; opacity: 0.9;">
-                ${heightDiffText} (${(percentChange >= 0 ? '+' : '') + percentChange.toFixed(2)}%)
+                ${profitLossText} (${(percentChange >= 0 ? '+' : '') + percentChange.toFixed(2)}%)
             </div>
         `;
         
@@ -113,10 +122,26 @@ class UIManager {
     }
     
     showWaitingState(currentColumn) {
-        // Показываем инструкции
-        this.instructionsElement.style.display = 'block';
-        this.updateInstructions('Кликни на колонну для прыжка');
+        // Скрываем инструкции по просьбе пользователя
+        this.instructionsElement.style.display = 'none';
         this.percentChangeElement.style.opacity = '1';
+    }
+    
+    // Обновление статуса подключения к Binance
+    updateConnectionStatus(connected, details = '') {
+        if (!this.connectionStatus) return;
+        
+        if (connected) {
+            this.connectionStatus.textContent = '🟢 Binance подключен';
+            this.connectionStatus.className = 'price-status active';
+        } else {
+            this.connectionStatus.textContent = '🔴 Подключение...';
+            this.connectionStatus.className = 'price-status error';
+        }
+        
+        if (details) {
+            this.connectionStatus.title = details;
+        }
     }
     
     animateValue(element, startValue, endValue, duration, formatter) {
@@ -150,10 +175,10 @@ class UIManager {
         effect.style.position = 'absolute';
         effect.style.top = '20px';
         effect.style.right = '20px';
-        effect.style.color = '#00FF41';
+        effect.style.color = '#7ED321';
         effect.style.fontSize = '24px';
         effect.style.fontWeight = 'bold';
-        effect.style.textShadow = '0 0 10px rgba(0, 255, 65, 0.8)';
+        effect.style.textShadow = '0 0 10px rgba(126, 211, 33, 0.8)';
         effect.style.animation = 'fadeInOut 2s ease-out forwards';
         effect.textContent = '↗ ПРИБЫЛЬ!';
         effect.style.pointerEvents = 'none';
@@ -184,10 +209,10 @@ class UIManager {
         effect.style.position = 'absolute';
         effect.style.top = '20px';
         effect.style.right = '20px';
-        effect.style.color = '#FF4444';
+        effect.style.color = '#D9534F';
         effect.style.fontSize = '24px';
         effect.style.fontWeight = 'bold';
-        effect.style.textShadow = '0 0 10px rgba(255, 68, 68, 0.8)';
+        effect.style.textShadow = '0 0 10px rgba(217, 83, 79, 0.8)';
         effect.style.animation = 'fadeInOut 2s ease-out forwards';
         effect.textContent = '↘ УБЫТОК!';
         effect.style.pointerEvents = 'none';
@@ -238,10 +263,10 @@ class UIManager {
         effect.style.top = '50%';
         effect.style.left = '50%';
         effect.style.transform = 'translate(-50%, -50%)';
-        effect.style.color = '#FFD700';
+        effect.style.color = '#F39C12';
         effect.style.fontSize = '32px';
         effect.style.fontWeight = 'bold';
-        effect.style.textShadow = '0 0 20px rgba(255, 215, 0, 0.8)';
+        effect.style.textShadow = '0 0 20px rgba(243, 156, 18, 0.8)';
         effect.style.animation = 'milestoneAnimation 3s ease-out forwards';
         effect.textContent = `🎉 ${milestone}!`;
         effect.style.pointerEvents = 'none';
@@ -314,5 +339,94 @@ class UIManager {
             }
         `;
         document.head.appendChild(style);
+    }
+    
+    // Обновление информации о системе сравнения
+    updateComparisonDisplay(comparisonInfo) {
+        if (!comparisonInfo) return;
+        
+        // Создаем элемент для отображения сравнения, если его нет
+        let comparisonElement = document.getElementById('comparisonInfo');
+        if (!comparisonElement) {
+            comparisonElement = document.createElement('div');
+            comparisonElement.id = 'comparisonInfo';
+            comparisonElement.style.position = 'absolute';
+            comparisonElement.style.top = '120px'; // Увеличено для избежания слипания
+            comparisonElement.style.left = '20px';
+            comparisonElement.style.background = 'rgba(0, 0, 0, 0.8)';
+            comparisonElement.style.color = '#FFFFFF';
+            comparisonElement.style.padding = '12px';
+            comparisonElement.style.fontSize = '12px';
+            comparisonElement.style.fontFamily = 'JetBrains Mono, monospace';
+            comparisonElement.style.zIndex = '1000';
+            comparisonElement.style.border = '1px solid #333333';
+            comparisonElement.style.lineHeight = '1.4';
+            document.getElementById('ui').appendChild(comparisonElement);
+        }
+        
+        // Получаем текущую цену от game
+        const currentPrice = this.getCurrentPrice ? this.getCurrentPrice(comparisonInfo.activeSymbol) : null;
+        
+        // Форматируем информацию о сравнении
+        const changeColor = comparisonInfo.profitLoss >= 0 ? '#7ED321' : '#D9534F';
+        
+        // Получаем данные о маржинальной позиции
+        const marginInfo = window.game?.columnManager?.marginPosition;
+        const leverage = comparisonInfo.leverage || 1;
+        const ownMoney = marginInfo ? marginInfo.initialWallet : comparisonInfo.totalBudget;
+        const borrowedMoney = marginInfo ? marginInfo.positionSize - ownMoney : 0;
+        
+        comparisonElement.innerHTML = `
+            <div style="color: #666666; margin-bottom: 6px; font-size: 9px; text-transform: uppercase;">ACTIVE POSITION</div>
+            <div style="color: #FFA500; font-weight: bold;">Плечо: x${leverage}</div>
+            <div>${comparisonInfo.activeSymbol}: ${comparisonInfo.activeAmount.toFixed(6)}</div>
+            <div>Buy: $${comparisonInfo.buyPrice.toFixed(2)}</div>
+            ${currentPrice ? `<div>Now: $${currentPrice.toFixed(2)}</div>` : ''}
+            <div style="margin-top: 6px; border-top: 1px solid #444; padding-top: 4px;">
+                <div style="color: #888; font-size: 11px;">ФИНАНСИРОВАНИЕ:</div>
+                <div>Свои: $${ownMoney.toFixed(2)}</div>
+                ${leverage > 1 ? `<div>Займ: $${borrowedMoney.toFixed(2)}</div>` : ''}
+                <div>Позиция: $${comparisonInfo.totalBudget.toFixed(2)}</div>
+            </div>
+            <div style="margin-top: 4px;">
+                <div>Стоимость: $${comparisonInfo.currentValue.toFixed(2)}</div>
+                <div style="color: ${changeColor};">
+                    P/L: ${comparisonInfo.profitLoss >= 0 ? '+' : ''}$${comparisonInfo.profitLoss.toFixed(2)} 
+                    (${comparisonInfo.percentChange >= 0 ? '+' : ''}${comparisonInfo.percentChange.toFixed(1)}%)
+                </div>
+            </div>
+        `;
+    }
+    
+    // Методы управления плечом
+    setupLeverageControl() {
+        if (!this.leverageButton) return;
+        
+        this.leverageButton.addEventListener('click', () => {
+            if (window.game && window.game.columnManager) {
+                const newLeverage = window.game.columnManager.cycleLeverage();
+                this.updateLeverageDisplay(newLeverage);
+            }
+        });
+    }
+    
+    updateLeverageDisplay(leverage) {
+        if (!this.leverageButton) return;
+        
+        this.leverageButton.textContent = `x${leverage}`;
+        
+        // Удаляем все классы плеча
+        this.leverageButton.classList.remove('x10', 'x100', 'x500', 'x1000');
+        
+        // Добавляем соответствующий класс
+        if (leverage === 10) {
+            this.leverageButton.classList.add('x10');
+        } else if (leverage === 100) {
+            this.leverageButton.classList.add('x100');
+        } else if (leverage === 500) {
+            this.leverageButton.classList.add('x500');
+        } else if (leverage === 1000) {
+            this.leverageButton.classList.add('x1000');
+        }
     }
 }
