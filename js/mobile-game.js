@@ -5,6 +5,11 @@ class MobileGame extends Game {
         
         super();
         
+        // Отладка инициализации
+        console.log('📱 MobileGame: Инициализация мобильной версии');
+        console.log('📱 MobileGame: ColumnManager:', !!this.columnManager);
+        console.log('📱 MobileGame: BinanceAPI:', !!this.columnManager?.binanceAPI);
+        
         // Мобильные элементы UI
         this.mobileWallet = document.getElementById('mobileWallet');
         this.mobilePnL = document.getElementById('mobilePnL');
@@ -21,6 +26,11 @@ class MobileGame extends Game {
         this.adaptCanvasForMobile();
         
         console.log('📱 Мобильная версия инициализирована');
+        
+        // Запускаем диагностику подключения через 3 секунды
+        setTimeout(() => {
+            this.diagnosticsBinanceConnection();
+        }, 3000);
     }
     
     setupCanvas() {
@@ -445,6 +455,42 @@ class MobileGame extends Game {
         } catch (error) {
             console.error('❌ Ошибка переподключения:', error);
         }
+    }
+    
+    // Диагностика подключения к Binance
+    diagnosticsBinanceConnection() {
+        console.log('🔍 === ДИАГНОСТИКА BINANCE ПОДКЛЮЧЕНИЯ ===');
+        console.log('🔍 ColumnManager существует:', !!this.columnManager);
+        console.log('🔍 BinanceAPI существует:', !!this.columnManager?.binanceAPI);
+        
+        if (this.columnManager?.binanceAPI) {
+            const status = this.columnManager.binanceAPI.getStatus();
+            console.log('🔍 Статус API:', status);
+            
+            const prices = this.columnManager.binanceAPI.getGamePrices();
+            console.log('🔍 Цены в кэше:', Object.keys(prices).length);
+            console.log('🔍 Детали цен:', prices);
+            
+            // Проверяем WebSocket состояние
+            console.log('🔍 WebSocket существует:', !!this.columnManager.binanceAPI.ws);
+            if (this.columnManager.binanceAPI.ws) {
+                console.log('🔍 WebSocket readyState:', this.columnManager.binanceAPI.ws.readyState);
+                console.log('🔍 WebSocket URL:', this.columnManager.binanceAPI.ws.url);
+            }
+            
+            // Пробуем тестовое подключение
+            this.columnManager.binanceAPI.testConnection()
+                .then(result => {
+                    console.log('✅ Тест подключения успешен:', result);
+                })
+                .catch(error => {
+                    console.error('❌ Тест подключения неудачен:', error);
+                });
+        } else {
+            console.error('❌ BinanceAPI не инициализирован');
+        }
+        
+        console.log('🔍 === КОНЕЦ ДИАГНОСТИКИ ===');
     }
 }
 

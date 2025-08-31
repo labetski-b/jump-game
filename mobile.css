@@ -179,9 +179,10 @@ body.mobile {
 }
 
 .usdt-button-row .crypto-btn.usdt-btn {
-    width: 100%;
-    max-width: none;
-    flex: none;
+    width: 100% !important;
+    max-width: none !important;
+    flex: none !important;
+    margin: 0 !important;
 }
 
 .crypto-btn.usdt-btn.active {
