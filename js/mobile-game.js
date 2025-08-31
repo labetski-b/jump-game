@@ -86,6 +86,26 @@ class MobileGame extends Game {
                 this.hidePositionModal();
             });
         }
+        
+        // Переподключение к Binance по долгому тапу на статус
+        let connectionStatusLongPressTimer;
+        this.mobileConnectionStatus.addEventListener('touchstart', (e) => {
+            connectionStatusLongPressTimer = setTimeout(() => {
+                this.reconnectToBinance();
+            }, 1000);
+        });
+        
+        this.mobileConnectionStatus.addEventListener('touchend', () => {
+            if (connectionStatusLongPressTimer) {
+                clearTimeout(connectionStatusLongPressTimer);
+            }
+        });
+        
+        this.mobileConnectionStatus.addEventListener('touchmove', () => {
+            if (connectionStatusLongPressTimer) {
+                clearTimeout(connectionStatusLongPressTimer);
+            }
+        });
     }
     
     handleCryptoButtonTap(button, index) {
@@ -265,10 +285,32 @@ class MobileGame extends Game {
     
     updateMobileConnectionStatus() {
         const status = this.columnManager.getStatus();
-        this.mobileConnectionStatus.textContent = status.connected ? 
-            '🟢 Binance подключен' : '🔴 Подключение...';
-        this.mobileConnectionStatus.className = 'status-indicator ' + 
-            (status.connected ? 'connected' : '');
+        const timeSinceUpdate = status.timeSinceUpdate || 0;
+        
+        let statusText;
+        let className = 'status-indicator';
+        
+        if (status.connected && timeSinceUpdate < 10000) {
+            statusText = '🟢 Binance подключен';
+            className += ' connected';
+        } else if (status.reconnectAttempts > 0) {
+            statusText = `🔄 Переподключение... (${status.reconnectAttempts}/10)`;
+        } else {
+            statusText = '🔴 Подключение...';
+        }
+        
+        this.mobileConnectionStatus.textContent = statusText;
+        this.mobileConnectionStatus.className = className;
+        
+        // Отладочная информация
+        if (timeSinceUpdate > 15000) {
+            console.log('🔍 Отладка Binance:', {
+                connected: status.connected,
+                timeSinceUpdate: timeSinceUpdate,
+                cachedPrices: status.cachedPrices,
+                reconnectAttempts: status.reconnectAttempts
+            });
+        }
     }
     
     updateButtonCharts() {
@@ -389,6 +431,20 @@ class MobileGame extends Game {
     init() {
         super.init();
         this.updateMobileLeverageDisplay(this.columnManager.getLeverage());
+    }
+    
+    // Переподключение к Binance
+    async reconnectToBinance() {
+        console.log('🔄 Принудительное переподключение к Binance...');
+        this.mobileConnectionStatus.textContent = '🔄 Переподключение...';
+        
+        try {
+            if (this.columnManager.binanceAPI) {
+                await this.columnManager.binanceAPI.reconnect();
+            }
+        } catch (error) {
+            console.error('❌ Ошибка переподключения:', error);
+        }
     }
 }
 

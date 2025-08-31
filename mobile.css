@@ -97,6 +97,8 @@ body.mobile {
     text-align: center;
     padding: 5px;
     font-size: 12px;
+    cursor: pointer;
+    user-select: none;
 }
 
 .status-indicator {
@@ -134,6 +136,12 @@ body.mobile {
     display: flex;
     gap: 8px;
     justify-content: center;
+    margin-bottom: 10px;
+}
+
+.usdt-button-row {
+    display: flex;
+    justify-content: center;
 }
 
 .crypto-btn {
@@ -168,6 +176,12 @@ body.mobile {
 .crypto-btn.usdt-btn {
     background: #4A90E2;
     border-color: #5BA3F5;
+}
+
+.usdt-button-row .crypto-btn.usdt-btn {
+    width: 100%;
+    max-width: none;
+    flex: none;
 }
 
 .crypto-btn.usdt-btn.active {
